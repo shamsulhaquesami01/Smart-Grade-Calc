@@ -1,0 +1,277 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartGrade L2T2 - BUET Grade Calculator & Performance Tracker</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons & Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation Header -->
+        <header class="main-header">
+            <div class="header-brand">
+                <div class="brand-icon">
+                    <i data-lucide="graduation-cap"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>SmartGrade <span>L2T2</span></h1>
+                    <p>BUET CSE Level 2 Term 2 Performance Engine</p>
+                </div>
+            </div>
+
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="dashboard">
+                    <i data-lucide="layout-dashboard"></i> Dashboard
+                </button>
+                <button class="nav-tab" data-tab="theory">
+                    <i data-lucide="book-open"></i> Theory Courses (5)
+                </button>
+                <button class="nav-tab" data-tab="sessional">
+                    <i data-lucide="flask-conical"></i> Sessional Courses (4)
+                </button>
+                <button class="nav-tab" data-tab="simulator">
+                    <i data-lucide="target"></i> GPA Simulator
+                </button>
+            </nav>
+
+            <div class="header-actions">
+                <button class="btn btn-outline" id="btnExport" title="Export Data JSON">
+                    <i data-lucide="download"></i> Export
+                </button>
+                <button class="btn btn-outline" id="btnImport" title="Import Data JSON">
+                    <i data-lucide="upload"></i> Import
+                </button>
+                <button class="btn btn-secondary" id="btnReset" title="Reset to BUET L2T2 Presets">
+                    <i data-lucide="rotate-ccw"></i> Reset Defaults
+                </button>
+                <input type="file" id="fileImport" accept=".json" style="display: none;">
+            </div>
+        </header>
+
+        <!-- Main Workspace Area -->
+        <main class="main-content">
+            <!-- TAB 1: DASHBOARD -->
+            <section id="tab-dashboard" class="tab-pane active">
+                <div class="dashboard-hero">
+                    <div class="stat-card glass primary-glow">
+                        <div class="stat-header">
+                            <span class="stat-title">Target Term GPA</span>
+                            <i data-lucide="award" class="stat-icon"></i>
+                        </div>
+                        <div class="stat-value" id="dashTargetGpa">3.75</div>
+                        <div class="stat-footer">Target scale: 4.00</div>
+                    </div>
+
+                    <div class="stat-card glass">
+                        <div class="stat-header">
+                            <span class="stat-title">Total Term Credits</span>
+                            <i data-lucide="layers" class="stat-icon"></i>
+                        </div>
+                        <div class="stat-value" id="dashTotalCredits">18.0</div>
+                        <div class="stat-footer">15.0 Theory + 3.75 Sessional</div>
+                    </div>
+
+                    <div class="stat-card glass">
+                        <div class="stat-header">
+                            <span class="stat-title">Secured Sessional GPA</span>
+                            <i data-lucide="activity" class="stat-icon"></i>
+                        </div>
+                        <div class="stat-value text-accent" id="dashSessionalGpa">--</div>
+                        <div class="stat-footer" id="dashSessionalStatus">Based on 4 sessionals</div>
+                    </div>
+
+                    <div class="stat-card glass">
+                        <div class="stat-header">
+                            <span class="stat-title">Avg Theory TF % for A+</span>
+                            <i data-lucide="trending-up" class="stat-icon"></i>
+                        </div>
+                        <div class="stat-value text-warning" id="dashAvgTfForA">-- %</div>
+                        <div class="stat-footer">Needed in 210-mark TF</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card glass chart-card">
+                        <div class="card-header">
+                            <h3><i data-lucide="radar"></i> Theory Preparedness (Out of 90)</h3>
+                            <span class="badge badge-info">CT + Attendance</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartTheoryPreparedness"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card glass chart-card">
+                        <div class="card-header">
+                            <h3><i data-lucide="bar-chart-3"></i> Required Term Final % (For A+)</h3>
+                            <span class="badge badge-warning">Target 80% Total</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartTfRequirements"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card glass table-card mt-6">
+                    <div class="card-header">
+                        <h3><i data-lucide="table"></i> Course Performance Matrix</h3>
+                        <button class="btn btn-sm btn-outline" id="btnRefreshDashboard"><i data-lucide="refresh-cw"></i> Recalculate</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Course Code</th>
+                                    <th>Title</th>
+                                    <th>Type</th>
+                                    <th>Credits</th>
+                                    <th>Secured / Total</th>
+                                    <th>Needed in TF for A+</th>
+                                    <th>Status / Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashCourseTableBody">
+                                <!-- Dynamic JS Population -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: THEORY COURSES -->
+            <section id="tab-theory" class="tab-pane">
+                <div class="section-banner glass">
+                    <div class="banner-text">
+                        <h2>📘 Theory Courses (5 Courses &bull; 300 Marks Each)</h2>
+                        <p>60 Marks Class Tests (Best 3 out of N) + 30 Marks Attendance + 210 Marks Term Final</p>
+                    </div>
+                    <div class="banner-badge">
+                        <i data-lucide="info"></i> Term Final marks are calculated dynamically for target grades!
+                    </div>
+                </div>
+
+                <div id="theoryCoursesContainer" class="courses-vertical-stack">
+                    <!-- Dynamic JS Population -->
+                </div>
+            </section>
+
+            <!-- TAB 3: SESSIONAL COURSES -->
+            <section id="tab-sessional" class="tab-pane">
+                <div class="section-banner glass sessional-banner">
+                    <div class="banner-text">
+                        <h2>🧪 Sessional Courses (4 Courses &bull; Flexible Weightages)</h2>
+                        <p>Start from the outline-based templates, then adjust every component and weight once your instructor confirms the split.</p>
+                    </div>
+                    <div class="banner-badge">
+                        <i data-lucide="sliders"></i> Dual Mode: Target Quiz Solver or Final Grade Calculator
+                    </div>
+                </div>
+
+                <div id="sessionalCoursesContainer" class="courses-vertical-stack">
+                    <!-- Dynamic JS Population -->
+                </div>
+            </section>
+
+            <!-- TAB 4: GPA SIMULATOR -->
+            <section id="tab-simulator" class="tab-pane">
+                <div class="card glass simulator-hero">
+                    <div class="sim-header">
+                        <h2><i data-lucide="sparkles"></i> Overall Term GPA Target Simulator</h2>
+                        <p>Adjust your target GPA and simulate what score you must average in Term Finals across all theory subjects.</p>
+                    </div>
+                    
+                    <div class="sim-control-group">
+                        <div class="slider-box">
+                            <label for="simGpaSlider">Target Term GPA: <span id="simGpaVal" class="highlight-val">3.75</span></label>
+                            <input type="range" id="simGpaSlider" min="2.00" max="4.00" step="0.05" value="3.75">
+                        </div>
+                    </div>
+
+                    <div class="sim-results-grid">
+                        <div class="sim-card glass">
+                            <h4>Required Theory Total %</h4>
+                            <div class="sim-value" id="simReqTheoryPct">-- %</div>
+                            <p>Average total percentage across theory courses</p>
+                        </div>
+                        <div class="sim-card glass">
+                            <h4>Required Term Final Avg</h4>
+                            <div class="sim-value text-accent" id="simReqTfScore">-- / 210</div>
+                            <p id="simReqTfPctText">-- % in Term Final exams</p>
+                        </div>
+                        <div class="sim-card glass">
+                            <h4>Feasibility Assessment</h4>
+                            <div class="sim-badge" id="simFeasibilityBadge">Calculating...</div>
+                            <p id="simFeasibilityNote">Based on current CT & Attendance scores</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card glass mt-6">
+                    <div class="card-header">
+                        <h3><i data-lucide="sliders"></i> Per-Course Custom Target Allocator</h3>
+                        <p>Fine-tune expected grades for individual theory courses to see combined Term GPA</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Theory Course</th>
+                                    <th>Credits</th>
+                                    <th>CT + Attn (out of 90)</th>
+                                    <th>Target Grade</th>
+                                    <th>Required TF Score (out of 210)</th>
+                                    <th>TF %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="simCourseTableBody">
+                                <!-- Dynamic JS Population -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="addEvaluationModal" class="modal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h3>Add Sessional Evaluation Component</h3>
+                <button class="modal-close" onclick="closeModal('addEvaluationModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalCourseIndex">
+                <div class="form-group">
+                    <label for="modalEvalName">Component Name</label>
+                    <input type="text" id="modalEvalName" class="form-control" placeholder="e.g., Presentation / Lab Test">
+                </div>
+                <div class="form-group">
+                    <label for="modalEvalWeight">Weightage (%)</label>
+                    <input type="number" id="modalEvalWeight" class="form-control" placeholder="e.g. 15" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label for="modalEvalMax">Max Score</label>
+                    <input type="number" id="modalEvalMax" class="form-control" placeholder="e.g. 50" value="50">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addEvaluationModal')">Cancel</button>
+                <button class="btn btn-primary" id="btnConfirmAddEval">Add Component</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>
