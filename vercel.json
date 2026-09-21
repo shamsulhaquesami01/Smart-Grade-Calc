@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "bash build_files.sh",
+  "builds": [
+    {
+      "src": "smart_grade_calc/wsgi.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "smart_grade_calc/wsgi.py"
+    }
+  ]
+}
