@@ -5,9 +5,17 @@
     {
       "src": "smart_grade_calc/wsgi.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "tracker/static/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/tracker/static/$1"
+    },
     {
       "src": "/(.*)",
       "dest": "smart_grade_calc/wsgi.py"
