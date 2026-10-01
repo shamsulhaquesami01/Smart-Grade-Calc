@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function attachTheoryEvents() {
-        // CT score change
+        // CT score editing: preserve focus while the user types.
         document.querySelectorAll('.ct-score-input').forEach(inp => {
             inp.addEventListener('input', (e) => {
                 const cIdx = parseInt(e.target.dataset.cindex);
@@ -307,8 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const val = e.target.value !== '' ? parseFloat(e.target.value) : null;
                 appState.courses[cIdx].cts[ctIdx].obtained = val;
                 saveState();
-                renderTheoryCourses();
             });
+            inp.addEventListener('change', () => renderTheoryCourses());
         });
 
         // Extra CT checkbox toggle
@@ -348,14 +348,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Attendance direct input
+        // Attendance direct input: do not destroy/recreate the focused field per digit.
         document.querySelectorAll('.attn-direct-input').forEach(inp => {
             inp.addEventListener('input', (e) => {
                 const cIdx = parseInt(e.target.dataset.cindex);
                 appState.courses[cIdx].attendance_direct = parseFloat(e.target.value || 0);
                 saveState();
-                renderTheoryCourses();
             });
+            inp.addEventListener('change', () => renderTheoryCourses());
         });
     }
 
@@ -584,11 +584,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const evIdx = parseInt(e.target.dataset.evindex);
                 appState.courses[cIdx].evaluations[evIdx].weight = parseFloat(e.target.value || 0);
                 saveState();
-                renderSessionalCourses();
             });
+            inp.addEventListener('change', () => renderSessionalCourses());
         });
 
-        // Score input
+        // Score input: keep focus/caret while entering multi-digit values.
         document.querySelectorAll('.ev-score-input').forEach(inp => {
             inp.addEventListener('input', (e) => {
                 const cIdx = parseInt(e.target.dataset.cindex);
@@ -596,8 +596,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const val = e.target.value !== '' ? parseFloat(e.target.value) : null;
                 appState.courses[cIdx].evaluations[evIdx].obtained = val;
                 saveState();
-                renderSessionalCourses();
             });
+            inp.addEventListener('change', () => renderSessionalCourses());
         });
 
         // Radio target component
